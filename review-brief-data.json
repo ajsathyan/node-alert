@@ -4,8 +4,21 @@
   "mode": "Release",
   "depth": "Standard",
   "status": "Complete",
-  "updatedAt": "2026-06-28T03:51:24Z",
+  "updatedAt": "2026-06-28T04:47:48Z",
   "snapshots": [
+    {
+      "id": "S-003",
+      "sourceId": "RB-001",
+      "project": "node-alert",
+      "mode": "Release",
+      "createdAt": "2026-06-28T04:47:48Z",
+      "status": "Complete",
+      "title": "Pluralis threshold alert added",
+      "doneSummary": "Monitor now emails when Online Tail Pluralis names exceed 2, while preserving non-Pluralis alerts and dedupe.",
+      "needsYouSummary": "None.",
+      "proofStatus": "Passed",
+      "links": ["RB-001", "CU-003", "N-003", "P-006", "P-007", "P-008"]
+    },
     {
       "id": "S-002",
       "sourceId": "RB-001",
@@ -54,6 +67,12 @@
       "title": "GitHub Actions scheduled runner",
       "summary": "Added workflow that runs every five minutes with five one-minute checks, restores/saves alert state through Actions cache, installs Chromium, and uses SMTP repository secrets.",
       "files": [".github/workflows/node-alert.yml", ".gitignore", "README.md", "node-alert/.env.example"]
+    },
+    {
+      "id": "CU-003",
+      "title": "Pluralis Tail threshold alert",
+      "summary": "Changed alert state to track non-Pluralis names and Pluralis names separately; an email is now sent when non-Pluralis names are present or Pluralis names exceed 2, with dedupe based on the triggered buckets.",
+      "files": ["node-alert/scripts/check-tail-nodes.js", "node-alert/tests/alert-logic.test.js", "README.md"]
     }
   ],
   "notes": [
@@ -66,6 +85,11 @@
       "id": "N-002",
       "title": "Selector decision",
       "summary": "The live Status menu is multi-select, so the monitor clicks None then Online before searching Tail; extraction is limited to node table rows and reports User plus Node ID."
+    },
+    {
+      "id": "N-003",
+      "title": "Pluralis threshold policy",
+      "summary": "Pluralis Online Tail names remain quiet at 2 or fewer; more than 2 is now alert-worthy and the email includes the count and names."
     }
   ],
   "proof": [
@@ -93,6 +117,21 @@
       "id": "P-005",
       "title": "GitHub Actions run passed",
       "summary": "Manual run 28310396903 completed in 5m30s; all five checks found 2 raw Online Tail rows, 0 alertable rows, and emailed false."
+    },
+    {
+      "id": "P-006",
+      "title": "Updated unit tests passed",
+      "summary": "npm test passed 11 node:test cases covering non-Pluralis alerts, Pluralis count > 2 alerts, dedupe, and email count/name formatting."
+    },
+    {
+      "id": "P-007",
+      "title": "Updated live dry run passed",
+      "summary": "DRY_RUN=1 LOOP_COUNT=1 npm run check found 2 Pluralis Online Tail names, 0 non-Pluralis names, no alert reasons, and emailed false."
+    },
+    {
+      "id": "P-008",
+      "title": "Diff hygiene passed",
+      "summary": "git diff --check passed after the alert-policy update."
     }
   ]
 }

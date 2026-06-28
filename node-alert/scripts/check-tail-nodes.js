@@ -8,22 +8,31 @@ const DEFAULT_URL = "https://agora.pluralis.ai/";
 const DEFAULT_ALERT_TO = "akhil.js33@gmail.com";
 const DEFAULT_STATE_FILE = ".alert-state/tail-node-alert.json";
 const DEFAULT_INTERVAL_MS = 60_000;
+const PLURALIS_TAIL_THRESHOLD = 2;
 
-export function filterAlertableNames(names) {
+function uniqueCleanNames(names) {
   const seen = new Set();
-  const filtered = [];
+  const uniqueNames = [];
 
   for (const name of names) {
     const cleanName = String(name || "").replace(/\s+/g, " ").trim();
-    if (!cleanName || /pluralis/i.test(cleanName)) continue;
+    if (!cleanName) continue;
 
     const key = cleanName.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
-    filtered.push(cleanName);
+    uniqueNames.push(cleanName);
   }
 
-  return filtered;
+  return uniqueNames;
+}
+
+export function filterAlertableNames(names) {
+  return uniqueCleanNames(names).filter((name) => !/pluralis/i.test(name));
+}
+
+export function filterPluralisNames(names) {
+  return uniqueCleanNames(names).filter((name) => /pluralis/i.test(name));
 }
 
 export function alertSignature(names) {
@@ -34,12 +43,46 @@ export function alertSignature(names) {
     .join("\n");
 }
 
-export function shouldNotify(alertableNames, previousSignature) {
-  if (alertableNames.length === 0) {
+export function buildAlertState(rawNames) {
+  const nonPluralisNames = filterAlertableNames(rawNames);
+  const pluralisNames = filterPluralisNames(rawNames);
+  const reasons = [];
+
+  if (nonPluralisNames.length > 0) {
+    reasons.push("nonPluralisTail");
+  }
+  if (pluralisNames.length > PLURALIS_TAIL_THRESHOLD) {
+    reasons.push("pluralisTailCount");
+  }
+
+  return {
+    nonPluralisNames,
+    pluralisNames,
+    pluralisThreshold: PLURALIS_TAIL_THRESHOLD,
+    reasons
+  };
+}
+
+export function alertStateSignature(alertState) {
+  const parts = [];
+
+  if (alertState.nonPluralisNames.length > 0) {
+    parts.push(`nonPluralis:\n${alertSignature(alertState.nonPluralisNames)}`);
+  }
+
+  if (alertState.pluralisNames.length > alertState.pluralisThreshold) {
+    parts.push(`pluralis>${alertState.pluralisThreshold}:\n${alertSignature(alertState.pluralisNames)}`);
+  }
+
+  return parts.join("\n\n");
+}
+
+export function shouldNotify(alertState, previousSignature) {
+  const signature = alertStateSignature(alertState);
+  if (!signature) {
     return { notify: false, signature: "" };
   }
 
-  const signature = alertSignature(alertableNames);
   return {
     notify: signature !== previousSignature,
     signature
@@ -185,26 +228,53 @@ export async function inspectTailNodes(options = {}) {
     await setStatusOnline(page);
     await searchTail(page);
     const rawNames = await extractMachineNames(page);
+    const alertState = buildAlertState(rawNames);
 
     return {
       rawNames,
-      alertableNames: filterAlertableNames(rawNames)
+      alertState
     };
   } finally {
     await browser.close();
   }
 }
 
-async function sendAlertEmail({ names, smtp, dryRun }) {
-  const subject = `Agora Tail node alert: ${names.length} non-Pluralis Online Tail node${names.length === 1 ? "" : "s"}`;
+export function formatAlertEmail(alertState, checkedAt = new Date()) {
+  const subjectParts = [];
+  const bodyParts = [];
+
+  if (alertState.nonPluralisNames.length > 0) {
+    subjectParts.push(`${alertState.nonPluralisNames.length} non-Pluralis`);
+    bodyParts.push(
+      `${alertState.nonPluralisNames.length} Online Tail machine${alertState.nonPluralisNames.length === 1 ? "" : "s"} did not include Pluralis in the displayed name:`,
+      "",
+      ...alertState.nonPluralisNames.map((name) => `- ${name}`)
+    );
+  }
+
+  if (alertState.pluralisNames.length > alertState.pluralisThreshold) {
+    if (bodyParts.length > 0) bodyParts.push("");
+    subjectParts.push(`${alertState.pluralisNames.length} Pluralis`);
+    bodyParts.push(
+      `${alertState.pluralisNames.length} Online Tail machine${alertState.pluralisNames.length === 1 ? "" : "s"} included Pluralis in the displayed name, above the threshold of ${alertState.pluralisThreshold}:`,
+      "",
+      ...alertState.pluralisNames.map((name) => `- ${name}`)
+    );
+  }
+
+  const subject = `Agora Tail node alert: ${subjectParts.join(", ")}`;
   const body = [
-    `${names.length} Online Tail machine${names.length === 1 ? "" : "s"} did not include Pluralis in the displayed name:`,
+    ...bodyParts,
     "",
-    ...names.map((name) => `- ${name}`),
-    "",
-    `Checked: ${new Date().toISOString()}`,
+    `Checked: ${checkedAt.toISOString()}`,
     `URL: ${DEFAULT_URL}`
   ].join("\n");
+
+  return { subject, body };
+}
+
+async function sendAlertEmail({ alertState, smtp, dryRun }) {
+  const { subject, body } = formatAlertEmail(alertState);
 
   if (dryRun) {
     console.log(JSON.stringify({ dryRun: true, wouldEmail: true, subject, body }, null, 2));
@@ -260,14 +330,14 @@ async function runOnce(options) {
   const state = await readJson(options.stateFile);
   const previousSignature = state.lastSignature || "";
   const inspection = await inspectTailNodes(options);
-  const decision = shouldNotify(inspection.alertableNames, previousSignature);
+  const decision = shouldNotify(inspection.alertState, previousSignature);
 
   if (decision.notify) {
     if (!options.dryRun) {
       assertSmtpConfig(options.smtp);
     }
     await sendAlertEmail({
-      names: inspection.alertableNames,
+      alertState: inspection.alertState,
       smtp: options.smtp,
       dryRun: options.dryRun
     });
@@ -276,18 +346,23 @@ async function runOnce(options) {
   await writeJson(options.stateFile, {
     lastSignature: decision.signature,
     lastRawNames: inspection.rawNames,
-    lastAlertableNames: inspection.alertableNames,
+    lastNonPluralisNames: inspection.alertState.nonPluralisNames,
+    lastPluralisNames: inspection.alertState.pluralisNames,
+    lastReasons: inspection.alertState.reasons,
     lastCheckedAt: new Date().toISOString()
   });
 
   console.log(JSON.stringify({
     checkedAt: new Date().toISOString(),
     rawCount: inspection.rawNames.length,
-    alertableCount: inspection.alertableNames.length,
-    alertableNames: inspection.alertableNames,
+    nonPluralisCount: inspection.alertState.nonPluralisNames.length,
+    nonPluralisNames: inspection.alertState.nonPluralisNames,
+    pluralisCount: inspection.alertState.pluralisNames.length,
+    pluralisNames: inspection.alertState.pluralisNames,
+    alertReasons: inspection.alertState.reasons,
     emailed: decision.notify && !options.dryRun,
     wouldEmail: decision.notify && options.dryRun,
-    deduped: inspection.alertableNames.length > 0 && !decision.notify
+    deduped: inspection.alertState.reasons.length > 0 && !decision.notify
   }, null, 2));
 }
 
@@ -320,5 +395,6 @@ if (process.argv[1] === currentFile) {
 }
 
 export const internals = {
-  machineNameFromCells
+  machineNameFromCells,
+  PLURALIS_TAIL_THRESHOLD
 };

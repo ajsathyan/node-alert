@@ -2,7 +2,10 @@
 
 Public GitHub Actions monitor for Online Tail nodes on https://agora.pluralis.ai/.
 
-The monitor opens the Agora site with Playwright, goes to the Nodes tab, filters Status to Online, searches for Tail, and emails only when the resulting machine list includes one or more displayed names that do not contain `Pluralis`.
+The monitor opens the Agora site with Playwright, goes to the Nodes tab, filters Status to Online, searches for Tail, and emails when either:
+
+- one or more displayed Tail machine names do not contain `Pluralis`
+- more than two displayed Tail machine names do contain `Pluralis`
 
 The app code lives in `node-alert/`.
 
