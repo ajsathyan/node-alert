@@ -3,8 +3,8 @@
   "summary": "Public GitHub Actions monitor for Online Tail nodes on agora.pluralis.ai.",
   "mode": "Release",
   "depth": "Standard",
-  "status": "Ready for push",
-  "updatedAt": "2026-06-28T03:42:57Z",
+  "status": "Complete",
+  "updatedAt": "2026-06-28T03:51:24Z",
   "snapshots": [
     {
       "id": "S-002",
@@ -12,12 +12,12 @@
       "project": "node-alert",
       "mode": "Release",
       "createdAt": "2026-06-28T03:42:57Z",
-      "status": "Ready",
+      "status": "Complete",
       "title": "Node alert monitor implemented",
-      "doneSummary": "Public repo created, monitor code and workflow added, SMTP secrets copied, local proof passed.",
-      "needsYouSummary": "Watch first GitHub Actions run after push.",
-      "proofStatus": "Passed locally",
-      "links": ["RB-001", "CU-001", "CU-002", "N-001", "N-002", "P-001", "P-002", "P-003", "P-004"]
+      "doneSummary": "Public repo created, monitor code and workflow added, SMTP secrets copied, local and GitHub Actions proof passed.",
+      "needsYouSummary": "None.",
+      "proofStatus": "Passed",
+      "links": ["RB-001", "CU-001", "CU-002", "N-001", "N-002", "P-001", "P-002", "P-003", "P-004", "P-005"]
     },
     {
       "id": "S-001",
@@ -88,6 +88,11 @@
       "id": "P-004",
       "title": "SMTP secrets copied",
       "summary": "GitHub secret list shows SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, and SMTP_FROM set on ajsathyan/node-alert; values were not printed."
+    },
+    {
+      "id": "P-005",
+      "title": "GitHub Actions run passed",
+      "summary": "Manual run 28310396903 completed in 5m30s; all five checks found 2 raw Online Tail rows, 0 alertable rows, and emailed false."
     }
   ]
 }
