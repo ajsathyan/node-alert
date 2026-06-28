@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["project", "summary", "mode", "depth", "status", "updatedAt", "snapshots", "reviewItems", "changeUnits", "notes", "proof"],
+  "properties": {
+    "project": { "type": "string" },
+    "summary": { "type": "string" },
+    "mode": { "enum": ["Patch", "Feature", "Release"] },
+    "depth": { "enum": ["Standard", "Deep"] },
+    "status": { "type": "string" },
+    "updatedAt": { "type": "string" },
+    "snapshots": { "type": "array" },
+    "reviewItems": { "type": "array" },
+    "changeUnits": { "type": "array" },
+    "notes": { "type": "array" },
+    "proof": { "type": "array" }
+  },
+  "additionalProperties": false
+}

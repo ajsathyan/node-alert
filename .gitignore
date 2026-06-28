@@ -1,0 +1,7 @@
+node_modules/
+.alert-state/
+.env
+.env.*
+!.env.example
+playwright-report/
+test-results/

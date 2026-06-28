@@ -1,0 +1,93 @@
+{
+  "project": "node-alert",
+  "summary": "Public GitHub Actions monitor for Online Tail nodes on agora.pluralis.ai.",
+  "mode": "Release",
+  "depth": "Standard",
+  "status": "Ready for push",
+  "updatedAt": "2026-06-28T03:42:57Z",
+  "snapshots": [
+    {
+      "id": "S-002",
+      "sourceId": "RB-001",
+      "project": "node-alert",
+      "mode": "Release",
+      "createdAt": "2026-06-28T03:42:57Z",
+      "status": "Ready",
+      "title": "Node alert monitor implemented",
+      "doneSummary": "Public repo created, monitor code and workflow added, SMTP secrets copied, local proof passed.",
+      "needsYouSummary": "Watch first GitHub Actions run after push.",
+      "proofStatus": "Passed locally",
+      "links": ["RB-001", "CU-001", "CU-002", "N-001", "N-002", "P-001", "P-002", "P-003", "P-004"]
+    },
+    {
+      "id": "S-001",
+      "sourceId": "RB-001",
+      "project": "node-alert",
+      "mode": "Release",
+      "createdAt": "2026-06-28T03:32:58Z",
+      "status": "In progress",
+      "title": "Build public node alert repo",
+      "doneSummary": "Intake completed; review brief started.",
+      "needsYouSummary": "None until auth/secrets proof is known.",
+      "proofStatus": "Pending",
+      "links": ["RB-001", "N-001"]
+    }
+  ],
+  "reviewItems": [
+    {
+      "id": "RB-001",
+      "title": "Release setup for scheduled external-site alert",
+      "status": "Open",
+      "priority": "P1",
+      "summary": "Create a public repo with a GitHub Actions Playwright monitor and SMTP email alerting."
+    }
+  ],
+  "changeUnits": [
+    {
+      "id": "CU-001",
+      "title": "Playwright Tail-node monitor",
+      "summary": "Added Node script that opens the Agora site, selects Nodes, sets Status to Online-only, searches Tail, parses table rows, filters Pluralis names, dedupes by signature, and sends SMTP email only on first appearance or changed non-Pluralis list.",
+      "files": ["node-alert/scripts/check-tail-nodes.js", "node-alert/tests/alert-logic.test.js", "node-alert/package.json", "node-alert/package-lock.json"]
+    },
+    {
+      "id": "CU-002",
+      "title": "GitHub Actions scheduled runner",
+      "summary": "Added workflow that runs every five minutes with five one-minute checks, restores/saves alert state through Actions cache, installs Chromium, and uses SMTP repository secrets.",
+      "files": [".github/workflows/node-alert.yml", ".gitignore", "README.md", "node-alert/.env.example"]
+    }
+  ],
+  "notes": [
+    {
+      "id": "N-001",
+      "title": "Accepted behavior",
+      "summary": "Notify only when Online Tail search results include one or more displayed machine names that do not contain Pluralis; dedupe until the matching non-Pluralis list changes."
+    },
+    {
+      "id": "N-002",
+      "title": "Selector decision",
+      "summary": "The live Status menu is multi-select, so the monitor clicks None then Online before searching Tail; extraction is limited to node table rows and reports User plus Node ID."
+    }
+  ],
+  "proof": [
+    {
+      "id": "P-001",
+      "title": "Unit tests passed",
+      "summary": "npm test passed 6 node:test cases for Pluralis filtering, dedupe signatures, and table-row parsing."
+    },
+    {
+      "id": "P-002",
+      "title": "Live dry run passed",
+      "summary": "DRY_RUN=1 LOOP_COUNT=1 npm run check reached agora.pluralis.ai, found 2 Online Tail rows, both Pluralis, and sent no email."
+    },
+    {
+      "id": "P-003",
+      "title": "Dependency audit passed",
+      "summary": "npm audit --audit-level=high found 0 vulnerabilities after upgrading nodemailer."
+    },
+    {
+      "id": "P-004",
+      "title": "SMTP secrets copied",
+      "summary": "GitHub secret list shows SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, and SMTP_FROM set on ajsathyan/node-alert; values were not printed."
+    }
+  ]
+}
