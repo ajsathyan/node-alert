@@ -14,10 +14,10 @@
       "createdAt": "2026-06-28T04:47:48Z",
       "status": "Complete",
       "title": "Pluralis threshold alert added",
-      "doneSummary": "Monitor now emails when Online Tail Pluralis names exceed 2, while preserving non-Pluralis alerts and dedupe.",
+      "doneSummary": "Monitor now emails when Online Tail Pluralis names exceed 2, while preserving non-Pluralis alerts and dedupe; long CI loop marked trusted by user after monitor step reached.",
       "needsYouSummary": "None.",
-      "proofStatus": "Passed",
-      "links": ["RB-001", "CU-003", "N-003", "P-006", "P-007", "P-008"]
+      "proofStatus": "Passed with trusted CI loop",
+      "links": ["RB-001", "CU-003", "N-003", "P-006", "P-007", "P-008", "P-009"]
     },
     {
       "id": "S-002",
@@ -132,6 +132,11 @@
       "id": "P-008",
       "title": "Diff hygiene passed",
       "summary": "git diff --check passed after the alert-policy update."
+    },
+    {
+      "id": "P-009",
+      "title": "GitHub loop trusted",
+      "summary": "Manual run 28311740540 reached the monitor step; full five-minute loop was intentionally not waited after user accepted trust based on local proof."
     }
   ]
 }
